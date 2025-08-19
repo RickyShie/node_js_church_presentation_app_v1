@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -122,6 +123,10 @@ app.post('/api/sermon-meta', (req, res) => {
   
   // Broadcast updated sermon meta
   io.emit('sermon-meta-updated', sermonMeta);
+  
+  // Also broadcast to update the display immediately if Bible tab is active
+  io.emit('sermon-meta-display-update', sermonMeta);
+  
   res.json(sermonMeta);
 });
 
