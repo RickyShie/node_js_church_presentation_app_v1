@@ -30,24 +30,44 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
         }
         
+        .translations-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .translation-column {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
         .verse-text {
-            font-size: 1.8em;
+            font-size: 1.6em;
             line-height: 1.6;
-            margin: 15px 0;
+            margin: 10px 0;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
         }
         
         .verse-reference {
-            font-size: 1.2em;
+            font-size: 1.4em;
             font-weight: bold;
             color: #ffd700;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
+            text-align: center;
         }
         
         .translation-label {
-            font-size: 0.9em;
-            color: #b8d4f0;
-            margin-bottom: 5px;
+            font-size: 1.1em;
+            color: #ffd700;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            border-bottom: 2px solid rgba(255,215,0,0.3);
+            padding-bottom: 5px;
         }
         
         .sermon-meta-display {
@@ -105,9 +125,15 @@
         }
         
         @media (max-width: 768px) {
-            .verse-text { font-size: 1.4em; }
+            .verse-text { font-size: 1.2em; }
             .hymn-title { font-size: 2.2em; }
             .hymn-verse { font-size: 1.4em; }
+            .translations-container { 
+                flex-direction: column;
+            }
+            .translation-column {
+                min-width: 100%;
+            }
         }
     </style>
 </head>
@@ -128,34 +154,8 @@
 
         // Bible results display
         socket.on('bible-results', function(data) {
-            let content = `<div class="verse-reference">${data.bookName} ${data.verses[0]?.chapter}:${data.verses[0]?.verse}`;
-            if (data.verses[0]?.verse !== data.verses[data.verses.length-1]?.verse) {
-                content += `-${data.verses[data.verses.length-1]?.verse}`;
-            }
-            content += `</div>`;
-
-            // Group verses by translation
-            const versesByTranslation = {};
-            data.verses.forEach(verse => {
-                if (!versesByTranslation[verse.translation]) {
-                    versesByTranslation[verse.translation] = [];
-                }
-                versesByTranslation[verse.translation].push(verse);
-            });
-
-            // Display each translation
-            for (const [translation, verses] of Object.entries(versesByTranslation)) {
-                content += `<div class="verse-display">`;
-                content += `<div class="translation-label">${translation}</div>`;
-                
-                verses.forEach(verse => {
-                    content += `<div class="verse-text"><sup>${verse.verse}</sup> ${verse.text}</div>`;
-                });
-                content += `</div>`;
-            }
-
-            // Add sermon metadata
-            content += `
+            // Add sermon metadata at the top
+            let content = `
                 <div class="sermon-meta-display">
                     <h3>📖 ${data.sermonMeta.title}</h3>
                     <div class="row mt-3">
@@ -170,6 +170,39 @@
                     </div>
                 </div>
             `;
+
+            // Add verse reference
+            content += `<div class="verse-reference">${data.bookName} ${data.verses[0]?.chapter}:${data.verses[0]?.verse}`;
+            if (data.verses[0]?.verse !== data.verses[data.verses.length-1]?.verse) {
+                content += `-${data.verses[data.verses.length-1]?.verse}`;
+            }
+            content += `</div>`;
+
+            // Group verses by translation
+            const versesByTranslation = {};
+            data.verses.forEach(verse => {
+                if (!versesByTranslation[verse.translation]) {
+                    versesByTranslation[verse.translation] = [];
+                }
+                versesByTranslation[verse.translation].push(verse);
+            });
+
+            // Display translations horizontally
+            content += `<div class="verse-display">`;
+            content += `<div class="translations-container">`;
+            
+            for (const [translation, verses] of Object.entries(versesByTranslation)) {
+                content += `<div class="translation-column">`;
+                content += `<div class="translation-label">${translation}</div>`;
+                
+                verses.forEach(verse => {
+                    content += `<div class="verse-text"><sup>${verse.verse}</sup> ${verse.text}</div>`;
+                });
+                content += `</div>`;
+            }
+            
+            content += `</div>`; // Close translations-container
+            content += `</div>`; // Close verse-display
 
             displayContent.innerHTML = content;
         });
@@ -211,10 +244,46 @@
             displayContent.innerHTML = content;
         });
 
-        // Sermon meta updates
+        // Sermon meta updates - Update display immediately
         socket.on('sermon-meta-updated', function(data) {
-            // If currently showing Bible results, we might want to update the meta section
-            // This is handled by the bible-results event
+            // Update the sermon meta section if Bible verses are currently displayed
+            const sermonMetaElement = document.querySelector('.sermon-meta-display');
+            if (sermonMetaElement) {
+                sermonMetaElement.innerHTML = `
+                    <h3>📖 ${data.title}</h3>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <p><strong>🎤 Speaker:</strong> ${data.speaker}</p>
+                            <p><strong>🗣️ Translator:</strong> ${data.translator}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>🎹 Pianist:</strong> ${data.pianist}</p>
+                            <p><strong>🎵 Hymns:</strong> #${data.hymn1}, #${data.hymn2}</p>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        // Handle immediate sermon meta display updates
+        socket.on('sermon-meta-display-update', function(data) {
+            // Force update the display if currently showing Bible content
+            const sermonMetaElement = document.querySelector('.sermon-meta-display');
+            if (sermonMetaElement) {
+                sermonMetaElement.innerHTML = `
+                    <h3>📖 ${data.title}</h3>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <p><strong>🎤 Speaker:</strong> ${data.speaker}</p>
+                            <p><strong>🗣️ Translator:</strong> ${data.translator}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>🎹 Pianist:</strong> ${data.pianist}</p>
+                            <p><strong>🎵 Hymns:</strong> #${data.hymn1}, #${data.hymn2}</p>
+                        </div>
+                    </div>
+                `;
+            }
         });
 
         // Tab changes
