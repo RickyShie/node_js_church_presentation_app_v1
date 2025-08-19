@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Church Display Control Panel</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .tab-content { margin-top: 20px; }
+        .verse-result { margin: 10px 0; padding: 15px; background: #f8f9fa; border-left: 4px solid #007bff; }
+        .translation-label { font-weight: bold; color: #007bff; }
+        .verse-text { margin: 5px 0; line-height: 1.6; }
+        .sermon-meta { background: #e9ecef; padding: 15px; border-radius: 5px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Church Display Control Panel</h1>
+        
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="bible-tab" data-bs-toggle="tab" data-bs-target="#bible" type="button" role="tab">
+                    📖 Bible Search
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="hymn-tab" data-bs-toggle="tab" data-bs-target="#hymn" type="button" role="tab">
+                    🎵 Hymn Search
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="announcements-tab" data-bs-toggle="tab" data-bs-target="#announcements" type="button" role="tab">
+                    📢 Announcements & Sermon Meta
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="mainTabsContent">
+            <!-- Bible Search Tab -->
+            <div class="tab-pane fade show active" id="bible" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <form id="bibleSearchForm">
+                            <div class="mb-3">
+                                <label for="bookSelect" class="form-label">Bible Book</label>
+                                <select class="form-select" id="bookSelect" required>
+                                    <option value="">Select a book...</option>
+                                </select>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label for="chapterInput" class="form-label">Chapter</label>
+                                    <input type="number" class="form-control" id="chapterInput" min="1" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="startVerseInput" class="form-label">Start Verse</label>
+                                    <input type="number" class="form-control" id="startVerseInput" min="1" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="endVerseInput" class="form-label">End Verse</label>
+                                    <input type="number" class="form-control" id="endVerseInput" min="1" required>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 mt-3">
+                                <label class="form-label">Translations</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="NIV" id="nivCheck" checked>
+                                    <label class="form-check-label" for="nivCheck">NIV</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="KOUGO" id="kougoCheck">
+                                    <label class="form-check-label" for="kougoCheck">KOUGO (口語訳)</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="CUNP" id="cunpCheck">
+                                    <label class="form-check-label" for="cunpCheck">CUNP (Chinese Union Version)</label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">🔍 Search & Display</button>
+                        </form>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="sermon-meta">
+                            <h5>Current Sermon Metadata</h5>
+                            <div id="currentSermonMeta"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hymn Search Tab -->
+            <div class="tab-pane fade" id="hymn" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <form id="hymnSearchForm">
+                            <div class="mb-3">
+                                <label for="hymnNumberInput" class="form-label">Hymn Number</label>
+                                <input type="text" class="form-control" id="hymnNumberInput" placeholder="e.g., 324">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="hymnTitleInput" class="form-label">Hymn Title or Keywords</label>
+                                <input type="text" class="form-control" id="hymnTitleInput" placeholder="e.g., Amazing Grace">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-success">🎵 Search Hymn & Display</button>
+                        </form>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="alert alert-info">
+                            <h6>Hymn Search</h6>
+                            <p>Enter either a hymn number or search by title/keywords. Results will be displayed on the main screen.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Announcements & Sermon Meta Tab -->
+            <div class="tab-pane fade" id="announcements" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Sermon Metadata</h5>
+                        <form id="sermonMetaForm">
+                            <div class="mb-2">
+                                <label for="sermonTitle" class="form-label">Sermon Title</label>
+                                <input type="text" class="form-control" id="sermonTitle" required>
+                            </div>
+                            <div class="mb-2">
+                                <label for="speakerName" class="form-label">Speaker</label>
+                                <input type="text" class="form-control" id="speakerName" required>
+                            </div>
+                            <div class="mb-2">
+                                <label for="translatorName" class="form-label">Translator</label>
+                                <input type="text" class="form-control" id="translatorName">
+                            </div>
+                            <div class="mb-2">
+                                <label for="pianistName" class="form-label">Pianist</label>
+                                <input type="text" class="form-control" id="pianistName">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="hymn1Number" class="form-label">Hymn 1 #</label>
+                                    <input type="text" class="form-control" id="hymn1Number">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="hymn2Number" class="form-label">Hymn 2 #</label>
+                                    <input type="text" class="form-control" id="hymn2Number">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-warning mt-3">💾 Update Sermon Info</button>
+                        </form>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h5>Announcements</h5>
+                        <button type="button" class="btn btn-info mb-3" onclick="loadAnnouncements()">📢 Load & Display Announcements</button>
+                        <div id="announcementsList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        
+        // Load Bible books
+        fetch('/api/bible-books')
+            .then(response => response.json())
+            .then(books => {
+                const bookSelect = document.getElementById('bookSelect');
+                for (const [code, name] of Object.entries(books)) {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = name;
+                    bookSelect.appendChild(option);
+                }
+            });
+
+        // Load current sermon meta
+        function loadSermonMeta() {
+            fetch('/api/sermon-meta')
+                .then(response => response.json())
+                .then(data => {
+                    updateSermonMetaDisplay(data);
+                    updateSermonMetaForm(data);
+                });
+        }
+
+        function updateSermonMetaDisplay(meta) {
+            const display = document.getElementById('currentSermonMeta');
+            display.innerHTML = `
+                <p><strong>Title:</strong> ${meta.title}</p>
+                <p><strong>Speaker:</strong> ${meta.speaker}</p>
+                <p><strong>Translator:</strong> ${meta.translator}</p>
+                <p><strong>Pianist:</strong> ${meta.pianist}</p>
+                <p><strong>Hymns:</strong> #${meta.hymn1}, #${meta.hymn2}</p>
+            `;
+        }
+
+        function updateSermonMetaForm(meta) {
+            document.getElementById('sermonTitle').value = meta.title || '';
+            document.getElementById('speakerName').value = meta.speaker || '';
+            document.getElementById('translatorName').value = meta.translator || '';
+            document.getElementById('pianistName').value = meta.pianist || '';
+            document.getElementById('hymn1Number').value = meta.hymn1 || '';
+            document.getElementById('hymn2Number').value = meta.hymn2 || '';
+        }
+
+        // Bible search form
+        document.getElementById('bibleSearchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const book = document.getElementById('bookSelect').value;
+            const chapter = document.getElementById('chapterInput').value;
+            const startVerse = document.getElementById('startVerseInput').value;
+            const endVerse = document.getElementById('endVerseInput').value;
+            
+            const translations = [];
+            if (document.getElementById('nivCheck').checked) translations.push('NIV');
+            if (document.getElementById('kougoCheck').checked) translations.push('KOUGO');
+            if (document.getElementById('cunpCheck').checked) translations.push('CUNP');
+            
+            if (translations.length === 0) {
+                alert('Please select at least one translation.');
+                return;
+            }
+            
+            fetch('/api/bible-search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ book, chapter, startVerse, endVerse, translations })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Bible search completed:', data);
+            });
+        });
+
+        // Hymn search form
+        document.getElementById('hymnSearchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const number = document.getElementById('hymnNumberInput').value;
+            const query = document.getElementById('hymnTitleInput').value;
+            
+            fetch('/api/hymn-search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ number, query })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Hymn search completed:', data);
+            });
+        });
+
+        // Sermon meta form
+        document.getElementById('sermonMetaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const sermonMeta = {
+                title: document.getElementById('sermonTitle').value,
+                speaker: document.getElementById('speakerName').value,
+                translator: document.getElementById('translatorName').value,
+                pianist: document.getElementById('pianistName').value,
+                hymn1: document.getElementById('hymn1Number').value,
+                hymn2: document.getElementById('hymn2Number').value
+            };
+            
+            fetch('/api/sermon-meta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(sermonMeta)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Sermon meta updated:', data);
+                updateSermonMetaDisplay(data);
+            });
+        });
+
+        // Load announcements
+        function loadAnnouncements() {
+            fetch('/api/announcements')
+                .then(response => response.json())
+                .then(data => {
+                    const list = document.getElementById('announcementsList');
+                    list.innerHTML = data.map(ann => `
+                        <div class="alert alert-secondary">
+                            <h6>${ann.title}</h6>
+                            <p>${ann.content}</p>
+                            <small class="text-muted">${ann.date}</small>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        // Tab change handling
+        document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function(e) {
+                const tabName = e.target.id.replace('-tab', '');
+                socket.emit('tab-changed', tabName);
+            });
+        });
+
+        // Socket.io listeners
+        socket.on('sermon-meta-updated', function(meta) {
+            updateSermonMetaDisplay(meta);
+        });
+
+        // Initialize
+        loadSermonMeta();
+    </script>
+</body>
+</html>

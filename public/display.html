@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Church Display</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .display-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .verse-display {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .verse-text {
+            font-size: 1.8em;
+            line-height: 1.6;
+            margin: 15px 0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .verse-reference {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+        
+        .translation-label {
+            font-size: 0.9em;
+            color: #b8d4f0;
+            margin-bottom: 5px;
+        }
+        
+        .sermon-meta-display {
+            background: rgba(255,255,255,0.15);
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .hymn-display {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .hymn-title {
+            font-size: 3em;
+            margin-bottom: 30px;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .hymn-verse {
+            font-size: 1.8em;
+            line-height: 1.8;
+            margin: 25px 0;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .announcements-display {
+            padding: 20px 0;
+        }
+        
+        .announcement-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+            border-left: 5px solid #ffd700;
+        }
+        
+        .announcement-title {
+            font-size: 1.5em;
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+        
+        .welcome-message {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 2em;
+            color: #ffd700;
+        }
+        
+        @media (max-width: 768px) {
+            .verse-text { font-size: 1.4em; }
+            .hymn-title { font-size: 2.2em; }
+            .hymn-verse { font-size: 1.4em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="display-container">
+        <div id="displayContent">
+            <div class="welcome-message">
+                <h1>🙏 Welcome to Our Service</h1>
+                <p>Waiting for content...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const displayContent = document.getElementById('displayContent');
+
+        // Bible results display
+        socket.on('bible-results', function(data) {
+            let content = `<div class="verse-reference">${data.bookName} ${data.verses[0]?.chapter}:${data.verses[0]?.verse}`;
+            if (data.verses[0]?.verse !== data.verses[data.verses.length-1]?.verse) {
+                content += `-${data.verses[data.verses.length-1]?.verse}`;
+            }
+            content += `</div>`;
+
+            // Group verses by translation
+            const versesByTranslation = {};
+            data.verses.forEach(verse => {
+                if (!versesByTranslation[verse.translation]) {
+                    versesByTranslation[verse.translation] = [];
+                }
+                versesByTranslation[verse.translation].push(verse);
+            });
+
+            // Display each translation
+            for (const [translation, verses] of Object.entries(versesByTranslation)) {
+                content += `<div class="verse-display">`;
+                content += `<div class="translation-label">${translation}</div>`;
+                
+                verses.forEach(verse => {
+                    content += `<div class="verse-text"><sup>${verse.verse}</sup> ${verse.text}</div>`;
+                });
+                content += `</div>`;
+            }
+
+            // Add sermon metadata
+            content += `
+                <div class="sermon-meta-display">
+                    <h3>📖 ${data.sermonMeta.title}</h3>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <p><strong>🎤 Speaker:</strong> ${data.sermonMeta.speaker}</p>
+                            <p><strong>🗣️ Translator:</strong> ${data.sermonMeta.translator}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>🎹 Pianist:</strong> ${data.sermonMeta.pianist}</p>
+                            <p><strong>🎵 Hymns:</strong> #${data.sermonMeta.hymn1}, #${data.sermonMeta.hymn2}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            displayContent.innerHTML = content;
+        });
+
+        // Hymn results display
+        socket.on('hymn-results', function(data) {
+            let content = `
+                <div class="hymn-display">
+                    <div class="hymn-title">🎵 Hymn #${data.number}</div>
+                    <h2 style="color: #b8d4f0; margin-bottom: 40px;">${data.title}</h2>
+            `;
+
+            data.verses.forEach(verse => {
+                content += `<div class="hymn-verse">${verse}</div>`;
+            });
+
+            content += `</div>`;
+            displayContent.innerHTML = content;
+        });
+
+        // Announcements display
+        socket.on('announcements-updated', function(data) {
+            let content = `
+                <div class="announcements-display">
+                    <h1 style="text-align: center; color: #ffd700; margin-bottom: 40px;">📢 Church Announcements</h1>
+            `;
+
+            data.forEach(announcement => {
+                content += `
+                    <div class="announcement-item">
+                        <div class="announcement-title">${announcement.title}</div>
+                        <p style="font-size: 1.2em; line-height: 1.6;">${announcement.content}</p>
+                        <small style="color: #b8d4f0;">${announcement.date}</small>
+                    </div>
+                `;
+            });
+
+            content += `</div>`;
+            displayContent.innerHTML = content;
+        });
+
+        // Sermon meta updates
+        socket.on('sermon-meta-updated', function(data) {
+            // If currently showing Bible results, we might want to update the meta section
+            // This is handled by the bible-results event
+        });
+
+        // Tab changes
+        socket.on('active-tab-changed', function(tabName) {
+            console.log('Active tab changed to:', tabName);
+            
+            // You can add specific behavior for different tabs if needed
+            if (tabName === 'announcements') {
+                // Announcements will be loaded via the announcements-updated event
+            }
+        });
+
+        // Connection status
+        socket.on('connect', function() {
+            console.log('Connected to server');
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Disconnected from server');
+            displayContent.innerHTML = `
+                <div class="welcome-message">
+                    <h1>⚠️ Connection Lost</h1>
+                    <p>Reconnecting...</p>
+                </div>
+            `;
+        });
+
+        socket.on('reconnect', function() {
+            console.log('Reconnected to server');
+            displayContent.innerHTML = `
+                <div class="welcome-message">
+                    <h1>🙏 Welcome to Our Service</h1>
+                    <p>Waiting for content...</p>
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>
