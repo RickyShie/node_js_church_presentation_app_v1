@@ -1,19 +1,12 @@
-# fly.toml app configuration file generated for church-presentation-v1 on 2025-09-06T22:38:53+09:00
+# fly.toml app configuration file generated for node-js-church-presentation-app-v1 on 2025-09-06T13:45:49Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'church-presentation-v1'
+app = 'node-js-church-presentation-app-v1'
 primary_region = 'nrt'
 
 [build]
-
-[[mounts]]
-  source = 'data'
-  destination = '/data'
-  auto_extend_size_threshold = 80
-  auto_extend_size_increment = '1GB'
-  auto_extend_size_limit = '10GB'
 
 [http_service]
   internal_port = 3000
@@ -27,3 +20,4 @@ primary_region = 'nrt'
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
+  memory_mb = 1024
